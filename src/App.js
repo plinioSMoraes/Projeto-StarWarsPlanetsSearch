@@ -1,9 +1,10 @@
 import React from 'react';
 import './App.css';
+import Table from './pages/Table';
 
 function App() {
   return (
-    <span>Hello, App!</span>
+    <span><Table /></span>
   );
 }
 // Iniciando o projeto
