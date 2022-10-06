@@ -9,9 +9,11 @@ const COMPARISON_OPTIONS = ['maior que', 'menor que', 'igual a'];
 function Table() {
   const planets = useContext(PlanetContext);
   const [planetsState, setPlanestState] = useState([]);
+  const [filtersState, setFiltersState] = useState([]);
 
   const setStateFunc = () => {
     if (planetsState.length === 0 && planets.length > 0) {
+      setFiltersState([[{}, planets]]); // Estado sem filtros ou backup
       setPlanestState(planets);
     }
   };
@@ -20,13 +22,12 @@ function Table() {
     setStateFunc();
   }, [useContext, useState, setStateFunc]);
 
-  const filterByName = ({ target: { value } }) => {
+  const filterByName = ({ target: { value } }) => { // Filtra os planetas apartir do nome
     const newSearchState = planets.filter(({ name }) => name.includes(value));
     setPlanestState(newSearchState);
   };
 
-  const filterForm = (event) => {
-    event.preventDefault();
+  const reducerObj = (event) => { // Transforma o form em um objeto com os valores que eu quero
     const inputValue = event.target.previousSibling;
     const comparisonValue = inputValue.previousSibling;
     const columnValue = comparisonValue.previousSibling;
@@ -35,8 +36,11 @@ function Table() {
       comparisonValue: comparisonValue
         .options[comparisonValue.options.selectedIndex].value,
       columnValue: columnValue.options[columnValue.options.selectedIndex].value };
-    console.log(formObj);
-    const newFormSearch = planets.filter((planet) => {
+    return formObj;
+  };
+
+  const newFormFilter = (formObj) => { // Filtra os planetas atraves do form
+    const newFormSearch = filtersState[filtersState.length - 1][1].filter((planet) => {
       if (planet[formObj.columnValue] === 'unknown') {
         console.log('unknown');
         return '';
@@ -60,7 +64,15 @@ function Table() {
       console.log(newPlanets);
       return newPlanets;
     });
-    console.log(newFormSearch);
+    return newFormSearch;
+  };
+
+  const filterForm = (event) => { // Adiciona os filtros
+    event.preventDefault();
+    const formObj = reducerObj(event);
+    const newFormSearch = newFormFilter(formObj);
+    setFiltersState([...filtersState, [formObj, newFormSearch]]);
+    console.log(filtersState);
     setPlanestState(newFormSearch);
   };
 
