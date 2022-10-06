@@ -2,6 +2,10 @@ import React, { useContext, useState, useEffect } from 'react';
 import PlanetContext from '../context/PlanetContext';
 // import filterByName from '../helpers/filters';
 
+const COLUMN_OPTIONS = ['population', 'orbital_period', 'diameter',
+  'rotation_period', 'surface_water'];
+const COMPARISON_OPTIONS = ['maior que', 'menor que', 'igual a'];
+
 function Table() {
   const planets = useContext(PlanetContext);
   const [planetsState, setPlanestState] = useState([]);
@@ -21,6 +25,45 @@ function Table() {
     setPlanestState(newSearchState);
   };
 
+  const filterForm = (event) => {
+    event.preventDefault();
+    const inputValue = event.target.previousSibling;
+    const comparisonValue = inputValue.previousSibling;
+    const columnValue = comparisonValue.previousSibling;
+    const formObj = {
+      inputValue: inputValue.value,
+      comparisonValue: comparisonValue
+        .options[comparisonValue.options.selectedIndex].value,
+      columnValue: columnValue.options[columnValue.options.selectedIndex].value };
+    console.log(formObj);
+    const newFormSearch = planets.filter((planet) => {
+      if (planet[formObj.columnValue] === 'unknown') {
+        console.log('unknown');
+        return '';
+      }
+      const newPlanets = [];
+      switch (formObj.comparisonValue) {
+      case 'maior que':
+        console.log(`${formObj.inputValue} < ${planet[formObj.columnValue]}`);
+        return formObj.inputValue < parseInt(planet[formObj.columnValue], 10)
+          ? newPlanets.push(planet) : '';
+      case 'menor que':
+        console.log(`${formObj.inputValue} > ${planet[formObj.columnValue]}`);
+        return formObj.inputValue > parseInt(planet[formObj.columnValue], 10)
+          ? newPlanets.push(planet) : '';
+      case 'igual a':
+        console.log(`${formObj.inputValue} = ${planet[formObj.columnValue]}`);
+        return formObj.inputValue === planet[formObj.columnValue]
+          ? newPlanets.push(planet) : '';
+      default:
+      }
+      console.log(newPlanets);
+      return newPlanets;
+    });
+    console.log(newFormSearch);
+    setPlanestState(newFormSearch);
+  };
+
   if (planets.length > 0 && planetsState.length > 0) {
     return (
       <main>
@@ -32,6 +75,37 @@ function Table() {
               placeholder="name"
               onChange={ filterByName }
             />
+          </form>
+          <form>
+            <select data-testid="column-filter">
+              {COLUMN_OPTIONS.map((option) => (
+                <option
+                  key={ option }
+                  value={ option }
+                >
+                  {option}
+                </option>))}
+            </select>
+            <select data-testid="comparison-filter">
+              {COMPARISON_OPTIONS.map((test) => (
+                <option
+                  key={ test }
+                  value={ test }
+                >
+                  {test}
+                </option>))}
+            </select>
+            <input
+              data-testid="value-filter"
+              defaultValue={ 0 }
+            />
+            <button
+              type="button"
+              data-testid="button-filter"
+              onClick={ filterForm }
+            >
+              Filtrar
+            </button>
           </form>
         </section>
         <table>
