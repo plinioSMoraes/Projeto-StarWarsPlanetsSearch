@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PlanetContext from '../context/PlanetContext';
 // import filterByName from '../helpers/filters';
 
@@ -72,11 +72,14 @@ function Table() {
     const formObj = reducerObj(event);
     const newFormSearch = newFormFilter(formObj);
     setFiltersState([...filtersState, [formObj, newFormSearch]]);
-    console.log(filtersState);
+    console.log(formObj);
+    COLUMN_OPTIONS.splice(COLUMN_OPTIONS.indexOf(formObj.columnValue), 1);
     setPlanestState(newFormSearch);
+    console.log(COLUMN_OPTIONS);
   };
 
   if (planets.length > 0 && planetsState.length > 0) {
+    console.log(planets);
     return (
       <main>
         <section className="filters">
