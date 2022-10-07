@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import PlanetContext from '../context/PlanetContext';
-// import filterByName from '../helpers/filters';
+import { newFormFilter, reducerObj } from '../helpers/filters';
 
 const COLUMN_OPTIONS = ['population', 'orbital_period', 'diameter',
+  'rotation_period', 'surface_water'];
+const ORDER_OPTIONS = ['population', 'orbital_period', 'diameter',
   'rotation_period', 'surface_water'];
 const COMPARISON_OPTIONS = ['maior que', 'menor que', 'igual a'];
 
@@ -18,68 +20,87 @@ function Table() {
     }
   };
 
-  useEffect(() => {
-    setStateFunc();
-  }, [useContext, useState, setStateFunc]);
-
   const filterByName = ({ target: { value } }) => { // Filtra os planetas apartir do nome
     const newSearchState = planets.filter(({ name }) => name.includes(value));
-    setPlanestState(newSearchState);
+    const previousFilters = [].concat(filtersState);
+    console.log(previousFilters);
+    previousFilters[0][1] = newSearchState;
+    setFiltersState(previousFilters);
   };
 
-  const reducerObj = (event) => { // Transforma o form em um objeto com os valores que eu quero
-    const inputValue = event.target.previousSibling;
-    const comparisonValue = inputValue.previousSibling;
-    const columnValue = comparisonValue.previousSibling;
-    const formObj = {
-      inputValue: inputValue.value,
-      comparisonValue: comparisonValue
-        .options[comparisonValue.options.selectedIndex].value,
-      columnValue: columnValue.options[columnValue.options.selectedIndex].value };
-    return formObj;
-  };
-
-  const newFormFilter = (formObj) => { // Filtra os planetas atraves do form
-    const newFormSearch = filtersState[filtersState.length - 1][1].filter((planet) => {
-      if (planet[formObj.columnValue] === 'unknown') {
-        console.log('unknown');
-        return '';
+  const handleFilterBtn = ({ target }) => {
+    const newFilters = [].concat(filtersState);
+    filtersState.forEach((filter, index) => {
+      if (filter[0].columnValue === target.innerText) {
+        COLUMN_OPTIONS.push(filter[0].columnValue);
+        newFilters.splice(index, 1);
       }
-      const newPlanets = [];
-      switch (formObj.comparisonValue) {
-      case 'maior que':
-        console.log(`${formObj.inputValue} < ${planet[formObj.columnValue]}`);
-        return formObj.inputValue < parseInt(planet[formObj.columnValue], 10)
-          ? newPlanets.push(planet) : '';
-      case 'menor que':
-        console.log(`${formObj.inputValue} > ${planet[formObj.columnValue]}`);
-        return formObj.inputValue > parseInt(planet[formObj.columnValue], 10)
-          ? newPlanets.push(planet) : '';
-      case 'igual a':
-        console.log(`${formObj.inputValue} = ${planet[formObj.columnValue]}`);
-        return formObj.inputValue === planet[formObj.columnValue]
-          ? newPlanets.push(planet) : '';
-      default:
-      }
-      console.log(newPlanets);
-      return newPlanets;
     });
-    return newFormSearch;
+    setFiltersState(newFilters);
+    console.log(filtersState);
+  };
+
+  const deleteAllFilters = () => {
+    if (filtersState.length > 0) {
+      setFiltersState([[{}, planets]]);
+    }
   };
 
   const filterForm = (event) => { // Adiciona os filtros
     event.preventDefault();
     const formObj = reducerObj(event);
-    const newFormSearch = newFormFilter(formObj);
+    const newFormSearch = newFormFilter(formObj, filtersState);
     setFiltersState([...filtersState, [formObj, newFormSearch]]);
-    console.log(formObj);
-    COLUMN_OPTIONS.splice(COLUMN_OPTIONS.indexOf(formObj.columnValue), 1);
+    COLUMN_OPTIONS.splice(COLUMN_OPTIONS.indexOf(formObj.columnValue), 1); // Remove a opçao que ja foi filtrada
     setPlanestState(newFormSearch);
-    console.log(COLUMN_OPTIONS);
   };
 
+  const handleOrder = ({ target }) => {
+    const desc = target.previousSibling;
+    const asc = desc.previousSibling;
+    let order = asc.previousSibling;
+    order = order.options[order.options.selectedIndex].value;
+    const arrangedFilter = [].concat(filtersState);
+
+    // remove os unknown
+    let newArr = [];
+    for (let prev = 0; prev < arrangedFilter[0][1].length; prev += 1) {
+      console.log(arrangedFilter[0][1]);
+      if (arrangedFilter[0][1][prev][order] === 'unknown') {
+        newArr = [...newArr, arrangedFilter[0][1].splice(prev, 1)];
+        prev -= 1;
+      }
+    }
+    // ate aqui
+
+    if (desc.firstChild.checked) { // organiza o resto do array em ordem decrescente
+      arrangedFilter[0][1].sort((a, b) => {
+        console.log('descendente');
+        return parseInt(b[order], 10) - parseInt(a[order], 10);
+      });
+    }
+
+    if (asc.firstChild.checked) { // organiza o resto do arr e orden crescente
+      arrangedFilter[0][1].sort((a, b) => {
+        console.log('ascendente');
+        return parseInt(a[order], 10) - parseInt(b[order], 10);
+      });
+    }
+    newArr.forEach((arr) => { // bota de volta os unknown no final do arr
+      const newAttribute = arrangedFilter[0][1].length;
+      console.log(newAttribute);
+      const item = arr[0];
+      arrangedFilter[0][1][newAttribute] = item;
+    });
+
+    setFiltersState(arrangedFilter);
+  };
+
+  useEffect(() => {
+    setStateFunc();
+  }, [useContext, useState, setStateFunc]);
+
   if (planets.length > 0 && planetsState.length > 0) {
-    console.log(planets);
     return (
       <main>
         <section className="filters">
@@ -123,6 +144,62 @@ function Table() {
             </button>
           </form>
         </section>
+        <section>
+          <button
+            type="button"
+            onClick={ deleteAllFilters }
+            data-testid="button-remove-filters"
+          >
+            Delete All
+          </button>
+          {filtersState.map((filter, index) => {
+            if (index > 0) {
+              console.log(filtersState);
+              return (
+                <div
+                  data-testid="filter"
+                  key={ `Button Filter - ${index} ` }
+                >
+                  <button
+                    type="button"
+                    onClick={ handleFilterBtn }
+                  >
+                    {filter[0].columnValue}
+                  </button>
+                </div>
+              );
+            }
+            return '';
+          })}
+        </section>
+        <section>
+          <form>
+            <select data-testid="column-sort">
+              {ORDER_OPTIONS.map((option, index) => (
+                <option
+                  key={ `${option} - ${index}` }
+                  value={ option }
+                >
+                  {option}
+                </option>))}
+            </select>
+            <label htmlFor="ASC" data-testid="column-sort-input-asc">
+              <input type="radio" id="ASC" name="order" value="ASC" />
+              ASCENDENTE
+            </label>
+            <label htmlFor="DESC" data-testid="column-sort-input-desc">
+              <input type="radio" id="DESC" name="order" value="DESC" />
+              DESCENDENTE
+            </label>
+            <button
+              data-testid="column-sort-button"
+              type="button"
+              onClick={ handleOrder }
+            >
+              ORDENAR
+            </button>
+          </form>
+        </section>
         <table>
           <tbody>
             <tr>
@@ -142,9 +219,9 @@ function Table() {
             </tr>
           </tbody>
           <tbody>
-            {planetsState.map((planet, index) => (
+            {filtersState[filtersState.length - 1][1].map((planet, index) => (
               <tr key={ index }>
-                <td>{planet.name}</td>
+                <td data-testid="planet-name">{planet.name}</td>
                 <td>{planet.rotation_period}</td>
                 <td>{planet.orbital_period}</td>
                 <td>{planet.diameter}</td>
