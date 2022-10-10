@@ -86,6 +86,7 @@ function Table() {
         return parseInt(a[order], 10) - parseInt(b[order], 10);
       });
     }
+
     newArr.forEach((arr) => { // bota de volta os unknown no final do arr
       const newAttribute = arrangedFilter[0][1].length;
       console.log(newAttribute);
